@@ -1,4 +1,4 @@
-# melhorias-no-nomad
+# nomad-enhancement
 
 <!-- Gerado por dev-project em 2026-11-10. Mantenha curto (< 200 linhas): só o que o Claude não descobre sozinho lendo o código. -->
 
