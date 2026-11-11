@@ -13,10 +13,16 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 | Ação | Comando |
 |---|---|
 | Lint | `shellcheck scripts/*.sh` |
-| Testes | _(definir quando existirem; sugestão: `bats tests/`)_ |
+| Testes | `bats tests/` |
 
 ## Estrutura
-_(preencher conforme o projeto crescer; sugestão: `scripts/` para os scripts, `tests/` para testes)_
+- `scripts/wifi-powersave.sh`: desliga o power save do Wi-Fi de vez (drop-in do NetworkManager em `/etc/NetworkManager/conf.d/`) e na hora (`iw`). Com ele ligado, o tráfego que chega ao nomad (tailnet, DNS do Pi-hole) esperava 30–100 ms. Aceita `--dry-run` e `--undo`.
+- `scripts/dns-failover.sh`: instalado como `/usr/local/bin/nomad-dns-failover`; a cada 30 s testa o Pi-hole (`100.64.0.10`) e, após 2 falhas, roda `tailscale set --accept-dns=false`; religa quando ele volta (só o que ele mesmo desligou).
+- `scripts/dns-failover-install.sh`: instala o binário e `nomad-dns-failover.{service,timer}`. Aceita `--dry-run` e `--undo`.
+- `tests/`: testes `bats` (`bats tests/`).
+
+## Contexto da rede
+- O DNS da tailnet é só o Pi-hole (o Tailscale consulta todos os nameservers em paralelo, então resolvers públicos na lista furavam o bloqueio). O failover da tailnet inteira roda no GitHub Actions (repo público `brno01/tailnet-dns-failover`); o `dns-failover` daqui cobre o nomad em ~1 min.
 
 ## Convenções
 - Branch padrão: `master`. Trabalhe em branches de feature.
