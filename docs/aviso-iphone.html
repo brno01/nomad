@@ -1,0 +1,182 @@
+<title>Sem internet no iPhone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one calm reading column for a phone; a status card up top, two short procedures, then what to expect. */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --fg: #1c2530;
+  --muted: #5b6876;
+  --line: #dde3e9;
+  --accent: #2f6f8f;
+  --accent-soft: #e3eef4;
+  --ok: #2e7d4f;
+  --toggle-off: #c9d1d9;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171c; --surface: #1a2128; --fg: #e6ebf0; --muted: #9aa7b4; --line: #2a333c;
+    --accent: #7fb6d1; --accent-soft: #1d2d37; --ok: #6cc596; --toggle-off: #3a454f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171c; --surface: #1a2128; --fg: #e6ebf0; --muted: #9aa7b4; --line: #2a333c;
+  --accent: #7fb6d1; --accent-soft: #1d2d37; --ok: #6cc596; --toggle-off: #3a454f;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.page {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding-block: 2rem 3rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 1.75rem;
+}
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.75rem; line-height: 1.2; font-weight: 600; }
+h2 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow {
+  font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600;
+}
+header { display: grid; gap: 0.75rem; }
+.lead { color: var(--muted); }
+
+.notice {
+  background: var(--accent-soft);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.notice strong { font-weight: 600; }
+
+section { display: grid; gap: 0.9rem; }
+.symptoms { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
+
+.option {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+.option-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.option-head h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.tag { font-size: 0.75rem; color: var(--muted); }
+ol.steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.45rem; }
+ol.steps li::marker { color: var(--accent); font-weight: 600; }
+.ui { font-weight: 600; white-space: nowrap; }
+
+/* iOS-style switch, shown in the "off" position the reader should end up with */
+.switch-demo { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: var(--muted); }
+.switch {
+  width: 46px; height: 28px; border-radius: 999px; background: var(--toggle-off);
+  position: relative; flex: none;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+
+.done { color: var(--ok); font-weight: 600; }
+
+dl.effects { margin: 0; display: grid; gap: 0.7rem; }
+dl.effects div { display: grid; gap: 0.15rem; }
+dt { font-weight: 600; }
+dd { margin: 0; color: var(--muted); }
+
+footer { border-top: 1px solid var(--line); padding-top: 1.25rem; color: var(--muted); font-size: 0.95rem; display: grid; gap: 0.5rem; }
+</style>
+
+<main class="page">
+  <header>
+    <span class="eyebrow">Aviso aos usuários de iPhone</span>
+    <h1>Se a internet parar de funcionar no iPhone</h1>
+    <p class="lead">Um procedimento simples, de menos de um minuto, para você continuar navegando caso o nosso servidor fique fora do ar.</p>
+  </header>
+
+  <div class="notice">
+    <p><strong>Por que isso pode acontecer</strong></p>
+    <p>A navegação do seu iPhone passa pelo aplicativo Tailscale, que bloqueia anúncios e rastreadores por meio do nosso servidor. Se esse servidor ficar indisponível, por exemplo numa queda de energia, o sistema muda sozinho para um serviço alternativo em até 15 minutos. Este guia é para quem não quer esperar esse intervalo.</p>
+  </div>
+
+  <section>
+    <h2>Como reconhecer</h2>
+    <ul class="symptoms">
+      <li>Sites e aplicativos não carregam, embora o Wi-Fi ou o 4G mostrem sinal normal.</li>
+      <li>O Safari exibe a mensagem "Não foi possível encontrar o servidor".</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>O que fazer</h2>
+    <p>Desligue temporariamente o Tailscale. Escolha a forma que for mais prática para você.</p>
+
+    <div class="option">
+      <div class="option-head">
+        <h3>Pelo aplicativo Tailscale</h3>
+        <span class="tag">recomendado</span>
+      </div>
+      <ol class="steps">
+        <li>Abra o aplicativo <span class="ui">Tailscale</span>.</li>
+        <li>Toque na chave no topo da tela para desconectar.</li>
+      </ol>
+      <div class="switch-demo"><span class="switch" aria-hidden="true"></span><span>A chave deve ficar cinza, indicando que o Tailscale está desligado.</span></div>
+    </div>
+
+    <div class="option">
+      <div class="option-head">
+        <h3>Pelos Ajustes do iPhone</h3>
+      </div>
+      <ol class="steps">
+        <li>Abra <span class="ui">Ajustes</span>.</li>
+        <li>Toque em <span class="ui">VPN</span>, logo abaixo do Wi-Fi e do Bluetooth.</li>
+        <li>Desative a chave <span class="ui">Status</span>.</li>
+      </ol>
+    </div>
+
+    <p class="done">Pronto. A internet volta a funcionar normalmente em alguns segundos.</p>
+  </section>
+
+  <section>
+    <h2>Enquanto o Tailscale estiver desligado</h2>
+    <dl class="effects">
+      <div>
+        <dt>Anúncios</dt>
+        <dd>Voltam a aparecer nos sites e aplicativos, como em qualquer outra rede.</dd>
+      </div>
+      <div>
+        <dt>Arquivos compartilhados e servidores de jogos</dt>
+        <dd>Ficam indisponíveis até o Tailscale ser ligado novamente.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Quando ligar de novo</h2>
+    <p>Assim que receber o nosso aviso de normalização, ou depois de cerca de 30 minutos, abra o Tailscale e toque na chave para conectar. Se os sites deixarem de carregar novamente, desligue mais uma vez e aguarde um pouco mais.</p>
+    <p>Se o Tailscale voltar a se conectar sozinho, desligue-o pelo próprio aplicativo.</p>
+  </section>
+
+  <footer>
+    <p>Nenhum dado seu é perdido nesse processo, e não é preciso reinstalar nada.</p>
+    <p>Em caso de dúvida, fale conosco. Teremos prazer em ajudar.</p>
+  </footer>
+</main>
