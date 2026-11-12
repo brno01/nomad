@@ -262,3 +262,15 @@ def test_graph_merge_updates_own_colors(env):
     groups = {c["query"]: c["color"]["rgb"] for c in json.loads(g.read_text())["colorGroups"]}
     assert groups['path:"projects/nomad/Central do nomad.md"'] == 0x39FF14
     assert "tag:#map/projetos" in groups
+
+
+def test_conversations_hang_under_their_index_only(env):
+    conv = env["root"] / "notes/conversas"
+    conv.mkdir(parents=True)
+    (conv / "Conversas.md").write_text("---\ntype: index\n---\nPai: [[projects/nomad/Central do nomad|nomad]]\n")
+    (conv / "2026-11-11 Rede.md").write_text("---\ntype: conversa\n---\n# Rede\nA tailnet tailnet tailnet.\n- [ ] testar de novo amanhã\n")
+    run(env)
+    cat = (env["root"] / "map/Conversas.md").read_text()
+    assert "notes/conversas/Conversas|Conversas" in cat and "2026-11-11 Rede" not in cat
+    assert "2026-11-11 Rede" not in (env["root"] / "map/Rede.md").read_text()  # não vai para o nó
+    assert "testar de novo amanhã" in (env["root"] / "Central do nomad.md").read_text()  # pendência aparece

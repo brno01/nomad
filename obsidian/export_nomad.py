@@ -506,6 +506,7 @@ CATEGORIES = {
     "Guias": "Leia-mes dos repositórios e guias escritos à mão.",
     "Configurações": "Arquivos de configuração versionados (segredos omitidos).",
     "Suas notas": "A pasta notes/: é sua, o exportador nunca mexe lá.",
+    "Conversas": "Conversas com o Claude sobre o nomad, documentadas sozinhas pelo segundo cérebro (notes/conversas).",
     "Histórico": "Linha do tempo dos commits e o que mudou a cada exportação.",
 }
 
@@ -525,7 +526,9 @@ def manual_notes(vault: Path) -> list[Manual]:
         fm, _ = frontmatter(text)
         t = fm.get("type", "")
         top = rel.split("/", 1)[0]
-        if top == "notes":
+        if rel.startswith("notes/conversas/"):
+            cat = "Conversas"
+        elif top == "notes":
             cat = "Suas notas"
         elif t == "decision":
             cat = "Decisões"
@@ -565,6 +568,8 @@ def build(ctx: Ctx) -> dict[str, str]:
     note_entities: dict[str, list[str]] = {}
     auto_linked: dict[str, list[str]] = {}
     for m in ctx.manual:
+        if m.category == "Conversas":
+            continue  # cada conversa fica sob o índice dela, não espalhada pelos nós
         if m.title in fixed:
             note_entities[m.rel] = list(fixed[m.title])
             continue
@@ -576,6 +581,8 @@ def build(ctx: Ctx) -> dict[str, str]:
             auto_linked[m.rel] = chosen
     note_repos: dict[str, list[str]] = {}
     for m in ctx.manual:
+        if m.category == "Conversas":
+            continue
         hits = []
         for r in repos.values():
             # nome curto (ex.: "nomad") aparece em tudo: só conta pelas palavras-chave
@@ -792,7 +799,8 @@ def build(ctx: Ctx) -> dict[str, str]:
         if cat == "Histórico":
             items += [f"- {link('history/Linha do tempo (commits)', 'Linha do tempo (commits)')}: um item por commit, de todos os repositórios",
                       f"- {link('history/Novidades do cofre', 'Novidades do cofre')}: o que mudou na última exportação"]
-        items += [f"- {link(m.rel, m.title)}" for m in ctx.manual if m.category == cat]
+        items += [f"- {link(m.rel, m.title)}" for m in ctx.manual
+                  if m.category == cat and (cat != "Conversas" or m.rel == "notes/conversas/Conversas")]
         out[f"map/{cat}.md"] = note(cat, type_="map", kind="docs", tags=["map/docs", "mapa"], parent="map/Documentação",
                                     body=f"\n{d}\n\n" + "\n".join(items or ["- (nada ainda)"]))
 
@@ -983,7 +991,7 @@ def _novidades(ctx: Ctx, out: dict[str, str], auto_linked: dict[str, list[str]])
     lines.append("Notas manuais ligadas a nós do mapa pelo título e pelas palavras do texto. Se estiver errado, fixe em `[note_links]` no `obsidian/sources.toml`.\n")
     lines += [f"- {link(rel, Path(rel).name)} → {', '.join(ents)}" for rel, ents in sorted(auto_linked.items())] or ["- (nenhuma)"]
     orphans = [m for m in ctx.manual if not any(e for e in auto_linked.get(m.rel, []))
-               and m.title not in ctx.cfg.get("note_links", {}) and m.category != "Suas notas"]
+               and m.title not in ctx.cfg.get("note_links", {}) and m.category not in ("Suas notas", "Conversas")]
     lines.append("\n## Sem nó (precisam de você)\n")
     lines.append("Nenhum nó do mapa combinou (elas continuam ligadas pela categoria em Documentação). Ligue em `[note_links]` ou ponha palavras-chave no nó certo.\n")
     lines += [f"- {link(m.rel, m.title)}" for m in orphans] or ["- (nenhuma)"]
