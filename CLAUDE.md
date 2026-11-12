@@ -14,6 +14,7 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 |---|---|
 | Lint | `shellcheck scripts/*.sh` |
 | Testes | `bats tests/` |
+| Ativar o hook de segredos (uma vez por clone) | `git config core.hooksPath .githooks` (precisa de `brew install gitleaks`) |
 | Testes do exportador | `uv run --no-project --with pytest pytest obsidian/tests` |
 | Exportar para o Obsidian | `uv run --no-project python -I obsidian/export_nomad.py` (`--dry-run`, `--force`) |
 
@@ -24,6 +25,7 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 - `obsidian/export_nomad.py`: documenta o nomad no cofre do NAS (`/var/mnt/nas/vault/projects/nomad`, o mesmo que o Obsidian abre) no mesmo formato do exportador do Cerberus: `Central do nomad` → `map/` (Componentes, Sistema, Serviços, Repositórios, Documentação, Atalhos) → notas, cada uma com `Pai:`. Lê os repos pelo HEAD (commits, não a árvore de trabalho), só escreve se algo mudou e nunca toca notas sem o marcador `gerado por`. Repos git novos em `~/development/personal` entram sozinhos em "Novos (classificar)".
 - `obsidian/sources.toml`: fontes (inclusive `/root/nomad` no atheron por SSH, espelhado em `~/.cache/nomad-obsidian`), nós do mapa, descrições fixas e ligações de notas manuais. Ajuste aqui, não nas notas geradas.
 - `scripts/obsidian-install.sh`: instala `nomad-obsidian.{service,timer}` (systemd --user, a cada 10 min) e mescla as cores do nomad no `graph.json` do cofre. Aceita `--dry-run` e `--undo`.
+- `.githooks/pre-commit`: roda `gitleaks git --staged --redact` e barra o commit com segredo (falha fechado se o gitleaks não existir). Versionado; cada clone liga com `core.hooksPath`.
 - `tests/`: testes `bats` (`bats tests/`); `obsidian/tests/`: pytest do exportador.
 
 ## Contexto da rede

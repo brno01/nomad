@@ -1,0 +1,10 @@
+#!/bin/sh
+# Blocks commits that contain secrets (gitleaks over the staged diff; --redact keeps values out of the terminal).
+# Enable once per clone: git config core.hooksPath .githooks
+if ! command -v gitleaks >/dev/null 2>&1; then
+    echo "pre-commit: gitleaks not found (brew install gitleaks)" >&2
+    exit 1
+fi
+set -- --staged --redact --no-banner
+[ -f .gitleaks.toml ] && set -- "$@" --config .gitleaks.toml
+exec gitleaks git "$@"
