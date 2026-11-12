@@ -230,3 +230,35 @@ def test_vault_copy_of_repo_doc_is_linked_not_duplicated(env):
     assert not (env["root"] / "guides/tools - regras (CLAUDE.md).md").exists()
     assert "[[projects/nomad/tools regras|tools regras]]" in (env["root"] / "map/tools (repo).md").read_text()
     assert copy.read_text() == (env["tools"] / "CLAUDE.md").read_text()
+
+
+def test_only_the_bridge_links_to_other_projects(env):
+    cfg = env["cfg"]
+    cfg.write_text(cfg.read_text() + textwrap.dedent("""\
+        [[bridge]]
+        label = "Servidor"
+        central = "projects/server/Central"
+        summary = "o servidor."
+        uses = ["**DNS**: o resolvedor."]
+        """))
+    run(env)
+    outside = {}
+    for p in env["root"].rglob("*.md"):
+        text = p.read_text()
+        if ex.GENERATED_BY not in text:
+            continue
+        for t in wikilinks(text):
+            if t.startswith("projects/") and not t.startswith("projects/nomad/"):
+                outside.setdefault(p.relative_to(env["root"]).as_posix(), []).append(t)
+    assert outside == {"map/Projetos ligados.md": ["projects/server/Central"]}
+    assert "**DNS**: o resolvedor." in (env["root"] / "map/Projetos ligados.md").read_text()
+    assert "Projetos ligados" in (env["root"] / "Central do nomad.md").read_text()
+
+
+def test_graph_merge_updates_own_colors(env):
+    g = env["vault"] / ".obsidian/graph.json"
+    g.write_text(json.dumps({"colorGroups": [{"query": 'path:"projects/nomad/Central do nomad.md"', "color": {"a": 1, "rgb": 1}}]}))
+    ex.merge_graph(env["vault"], dry_run=False)
+    groups = {c["query"]: c["color"]["rgb"] for c in json.loads(g.read_text())["colorGroups"]}
+    assert groups['path:"projects/nomad/Central do nomad.md"'] == 0x39FF14
+    assert "tag:#map/projetos" in groups

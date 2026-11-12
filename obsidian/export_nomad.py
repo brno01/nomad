@@ -610,6 +610,8 @@ def build(ctx: Ctx) -> dict[str, str]:
         ("Repositórios", "repos", "Código do nomad, um nó por repositório e um por pasta."),
         ("Documentação", "docs", "Tudo que foi escrito sobre o nomad, em categorias."),
         ("Atalhos", "atalhos", "Comandos, links e referências prontos para copiar e clicar."),
+        ("Projetos ligados", "projetos", "A fronteira com os outros projetos: esta é a única nota do nomad com link para eles. "
+                                         "O que é de cada projeto fica documentado só nele."),
     ]
     for gname, gtag, gdesc in groups:
         children: list[str] = []
@@ -633,6 +635,12 @@ def build(ctx: Ctx) -> dict[str, str]:
             for n, d in (("Comandos", "comandos de cada repositório e uso dos scripts"),
                          ("Links", "repositórios e painéis"), ("Referências", "onde está cada coisa")):
                 children.append(f"- {link('shortcuts/' + n, n)}: {d}")
+        elif gtag == "projetos":
+            for b in cfg.get("bridge", []):
+                children.append(f"\n## {b['label']}\n\n{link(b['central'], 'Abrir a central do ' + b['label'])}: {b.get('summary', '')}\n")
+                if b.get("uses"):
+                    children.append("O nomad usa de lá:\n")
+                    children += [f"- {u}" for u in b["uses"]]
         out[f"map/{gname}.md"] = note(gname, type_="map", kind="group", tags=[f"map/{gtag}", "mapa"],
                                       parent=CENTRAL, body=f"\n{gdesc}\n\n" + "\n".join(children or ["- (nada ainda)"]))
 
@@ -921,7 +929,8 @@ def _central(ctx: Ctx, all_commits: list, services: dict) -> str:
         ("Serviços", "units do systemd instaladas pelos repositórios."),
         ("Repositórios", "o código, por repositório e por pasta."),
         ("Documentação", "decisões, pesquisas, planos, guias, configurações e histórico."),
-        ("Atalhos", "comandos, links e referências."))]
+        ("Atalhos", "comandos, links e referências."),
+        ("Projetos ligados", "a fronteira com os outros projetos (a única ponte para o Cerberus)."))]
     lines.append("\n## Índices\n")
     for v in ("Decisões", "Pesquisas", "Planos", "Guias"):
         lines.append(f"### {v}\n![[{BASE}/indexes.base#{v}]]\n")
@@ -1071,10 +1080,11 @@ def update_home(vault: Path, dry_run: bool) -> bool:
 
 GRAPH_SEARCH = [f'path:"{BASE}/map"', f'path:"{BASE}/shortcuts"', f'path:"{BASE}/{CENTRAL}.md"']
 GRAPH_COLORS = [
-    (f'path:"{BASE}/{CENTRAL}.md"', 0x2EA36B),
+    (f'path:"{BASE}/{CENTRAL}.md"', 0x39FF14),  # verde fluorescente: a cor do projeto nomad
     (f'path:"{BASE}/notes"', 13751771),
     ("tag:#map/sistema", 0x8E6CEF),
     ("tag:#map/repos", 0xE0A030),
+    ("tag:#map/projetos", 0xF472B6),  # nó "Projetos ligados" dos dois projetos (mesma cor por tipo)
 ]
 
 
@@ -1092,6 +1102,10 @@ def merge_graph(vault: Path, dry_run: bool) -> bool:
     for q, rgb in GRAPH_COLORS:
         if q not in have:
             groups.append({"query": q, "color": {"a": 1, "rgb": rgb}})
+        elif q.startswith(f'path:"{BASE}/'):  # grupos do próprio nomad: a cor daqui vale
+            for g in groups:
+                if g.get("query") == q:
+                    g["color"] = {"a": 1, "rgb": rgb}
     if json.dumps(data, sort_keys=True) == before:
         return False
     if not dry_run:

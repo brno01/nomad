@@ -66,7 +66,7 @@ keywords = ["Inspiron", "3530", "notebook", "Iris Xe"]
 [[entity]]
 name = "atheron (servidor do Cerberus)"
 group = "componentes"
-summary = "Servidor de casa. Para o nomad: Pi-hole (DNS da tailnet), NAS, backup Borg e Syncthing do cofre. Documentado na [[projects/cerberus/Cerberus|central do Cerberus]]."
+summary = "Servidor de casa (projeto Cerberus). O que o nomad usa dele está em Projetos ligados."
 keywords = ["atheron", "Cerberus"]
 
 [[entity]]
@@ -145,6 +145,23 @@ check = "systemctl status nomad-dns-failover.timer"
 "Contas do Claude por área" = ["Claude Code e Orca"]
 "Wine no nomad" = ["Wine e programas do Windows"]
 
+# ---------------------------------------------------------------- projetos ligados
+# A única ponte para outro projeto no cofre: só o nó "Projetos ligados" tem link para a central dele.
+# Em "uses", texto simples (sem [[links]]): o que é do outro projeto é documentado lá.
+
+[[bridge]]
+label = "Cerberus"
+central = "projects/cerberus/Cerberus"
+summary = "o servidor de casa (atheron). O nomad funciona sem ele; com ele, ganha os serviços abaixo."
+uses = [
+  "**Pi-hole**: único DNS da tailnet; se cair, o `nomad-dns-failover` desliga o DNS da Tailscale aqui.",
+  "**NAS por SMB**: pastas `files` e `vault` (o cofre do Obsidian, aberto direto em `/var/mnt/nas/vault`).",
+  "**Backup Borg**: usuário `backup-nomad`, só-acrescenta, no HD do NAS.",
+  "**Cadastro** (`cerberus-nomad`): recebe a chave do backup por Taildrop e devolve o `server-info.json`.",
+  "**Build do pendrive**: roda no atheron, isolado em `/srv/ssd/nomad`; credenciais `nomad-*` ficam no cofre do painel.",
+  "**Jogos**: servidores no container `games` (AMP, Ragnarok); o cliente do Ragnarok roda aqui pelo Wine.",
+]
+
 # ---------------------------------------------------------------- atalhos e links
 
 [[quick]]
@@ -178,10 +195,6 @@ cmd = "distrobox list"
 [[quick]]
 what = "Log desta documentação"
 cmd = "journalctl --user -u nomad-obsidian -n 50"
-
-[[link]]
-label = "Central do Cerberus (servidor)"
-note = "projects/cerberus/Cerberus"
 
 [[link]]
 label = "Tailscale: painel da tailnet"
