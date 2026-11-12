@@ -3,7 +3,9 @@
 # Ajuste aqui, não nas notas geradas: elas são reescritas a cada exportação.
 # Padrões de arquivo ("files") têm a forma "<repo>:<prefixo>"; "<repo>:" pega o repo inteiro.
 
-vault = "~/Vault"
+# Cofre do NAS (SMB do atheron), o mesmo que o Obsidian abre. Escrever por aqui faz o Obsidian
+# ver as mudanças na hora; o ~/Vault (Syncthing) existe só para o celular.
+vault = "/var/mnt/nas/vault"
 # Repos git novos nestas pastas entram sozinhos no nó "Novos (classificar)".
 discover = ["~/development/personal"]
 ignore = []

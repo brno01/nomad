@@ -1141,7 +1141,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg_text = args.config.read_text(encoding="utf-8")
     cfg = tomllib.loads(cfg_text)
-    vault = (args.vault or Path(os.path.expanduser(cfg.get("vault", "~/Vault")))).resolve()
+    vault = (args.vault or Path(os.path.expanduser(cfg.get("vault", "/var/mnt/nas/vault")))).resolve()
     if not vault.is_dir():
         print(f"cofre não encontrado: {vault}", file=sys.stderr)
         return 1
