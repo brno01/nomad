@@ -1,0 +1,186 @@
+# Fontes e nós do mapa do nomad no Obsidian (lido por obsidian/export_nomad.py).
+#
+# Ajuste aqui, não nas notas geradas: elas são reescritas a cada exportação.
+# Padrões de arquivo ("files") têm a forma "<repo>:<prefixo>"; "<repo>:" pega o repo inteiro.
+
+vault = "~/Vault"
+# Repos git novos nestas pastas entram sozinhos no nó "Novos (classificar)".
+discover = ["~/development/personal"]
+ignore = []
+
+# ---------------------------------------------------------------- repositórios
+
+[[source]]
+name = "nomad"
+url = "ssh://root@atheron/root/nomad"
+description = "O sistema do pendrive: imagem Bazzite (bootc), tudo que vai para o /etc, build do disco e gravador pelo Windows."
+keywords = ["pendrive", "DataTraveler", "write-nomad", "install-to-disk", "overlay/etc"]
+
+[[source]]
+name = "nomad-enhancement"
+path = "~/development/personal/nomad-enhancement"
+keywords = ["nomad-enhancement", "wifi-powersave", "nomad-dns-failover", "dns-failover"]
+
+[[source]]
+name = "dotfiles"
+path = "~/development/dotfiles"
+keywords = ["dotfiles", "install-desktop", "claude-account", "dev-project", "ecc-sync"]
+
+[[source]]
+name = "tailnet-dns-failover"
+path = "~/development/personal/tailnet-dns-failover"
+keywords = ["tailnet-dns-failover", "GitHub Actions", "tag:dns-failover"]
+
+# ---------------------------------------------------------------- descrições fixas
+# Têm prioridade sobre o que o exportador acha no CLAUDE.md, no README ou no cabeçalho do script.
+
+[descriptions]
+"nomad-enhancement:obsidian/" = "Exportador desta documentação para o cofre do Obsidian, com timer systemd --user."
+"nomad-enhancement:docs/" = "Páginas avulsas (aviso do iPhone para quando o Pi-hole cai)."
+"dotfiles:desktop/" = "Visual macOS Tahoe no KDE Plasma: temas, painéis, efeitos do KWin e troca claro/escuro."
+"dotfiles:claude/" = "Configuração global do Claude Code: settings, CLAUDE.md, statusline, skills e seleção do ECC."
+"dotfiles:bin/" = "Comandos instalados em ~/.local/bin (dev-project, ecc-sync, orca-ide)."
+"dotfiles:shell/" = "Trechos de shell linkados em ~/.bashrc.d (função claude por área)."
+"dotfiles:templates/" = "Modelos de orca.yaml e CLAUDE.md usados pelo dev-project."
+"dotfiles:git/" = "gitconfig compartilhado, incluído no ~/.gitconfig."
+"tailnet-dns-failover:.github/" = "Workflows do GitHub Actions: failover a cada 5 min e testes."
+
+# ---------------------------------------------------------------- nós do mapa
+# group: componentes | sistema. "keywords" ligam notas manuais ao nó; "files" listam o código.
+
+[[entity]]
+name = "Pendrive DataTraveler Max 1 TB"
+group = "componentes"
+summary = "Kingston DataTraveler Max 1 TB (USB 3.2 Gen 2): Ventoy de 32 GiB com ISOs de resgate e o resto para o nomad (LUKS2 + btrfs)."
+keywords = ["DataTraveler", "pendrive", "Kingston", "Ventoy"]
+files = ["nomad:build/", "nomad:windows/", "nomad:isos.md"]
+
+[[entity]]
+name = "Notebook Dell Inspiron 15 3530"
+group = "componentes"
+summary = "Notebook do dia a dia onde o nomad roda (Intel Iris Xe, tela 1920x1080 a 120 Hz, Wi-Fi)."
+keywords = ["Inspiron", "3530", "notebook", "Iris Xe"]
+
+[[entity]]
+name = "atheron (servidor do Cerberus)"
+group = "componentes"
+summary = "Servidor de casa. Para o nomad: Pi-hole (DNS da tailnet), NAS, backup Borg e Syncthing do cofre. Documentado na [[projects/cerberus/Cerberus|central do Cerberus]]."
+keywords = ["atheron", "Cerberus"]
+
+[[entity]]
+name = "Bazzite (bazzite-dx)"
+group = "sistema"
+summary = "Sistema imutável (Fedora Atomic/bootc) com KDE. Atualizações atômicas com volta à versão anterior; nada de dnf: Homebrew, Flatpak, distrobox."
+keywords = ["Bazzite", "bazzite-dx", "rpm-ostree", "bootc", "imutável", "uupd"]
+files = ["nomad:overlay/"]
+
+[[entity]]
+name = "Boot e criptografia"
+group = "sistema"
+summary = "Ventoy → GRUB do nomad, Secure Boot (MOK), LUKS2 com prompt do Plymouth."
+keywords = ["LUKS", "Plymouth", "GRUB", "Secure Boot", "MokManager", "boot"]
+
+[[entity]]
+name = "Modo jogo"
+group = "sistema"
+summary = "GameMode com hooks: pausa Syncthing, backup e indexação, limita a CPU para sobrar potência para a iGPU, calibrado por jogo."
+keywords = ["GameMode", "modo jogo", "MangoHud", "gamescope", "Steam", "Proton", "jogo", "jogos"]
+
+[[entity]]
+name = "Backup, NAS e cofre"
+group = "sistema"
+summary = "Borg (Pika Backup) para o atheron, pastas do NAS por SMB e o cofre do Obsidian por Syncthing."
+keywords = ["Borg", "Pika", "backup-nomad", "NAS", "SMB", "Syncthing"]
+
+[[entity]]
+name = "Rede (tailnet e DNS)"
+group = "sistema"
+summary = "Tailscale com todo o DNS pelo Pi-hole do atheron, failover local (30 s) e da tailnet (GitHub Actions), Wi-Fi sem power save."
+keywords = ["Tailscale", "tailnet", "Pi-hole", "DNS", "Wi-Fi", "power save", "latência"]
+files = ["nomad-enhancement:scripts/dns-failover", "nomad-enhancement:scripts/wifi-powersave", "nomad-enhancement:docs/", "tailnet-dns-failover:"]
+
+[[entity]]
+name = "Desktop (KDE com cara de macOS)"
+group = "sistema"
+summary = "Plasma com MacTahoe, barra e dock como no Mac, cantos arredondados e desfoque do KWin, troca claro/escuro automática."
+keywords = ["KDE", "Plasma", "MacTahoe", "KWin", "Kvantum", "Tahoe", "desktop"]
+files = ["dotfiles:desktop/"]
+
+[[entity]]
+name = "Claude Code e Orca"
+group = "sistema"
+summary = "Ambiente de desenvolvimento: Orca (ADE), Claude Code com conta por área, skills, ECC e MCPs."
+keywords = ["Claude", "Orca", "ECC", "skill", "skills", "MCP"]
+files = ["dotfiles:claude/", "dotfiles:bin/", "dotfiles:shell/", "dotfiles:templates/", "dotfiles:orca.yaml", "dotfiles:install.sh"]
+
+[[entity]]
+name = "Wine e programas do Windows"
+group = "sistema"
+summary = "Wine pelo Flatpak do Flathub (org.winehq.Wine), sem mexer na imagem do sistema."
+keywords = ["Wine", "winetricks", "org.winehq.Wine"]
+
+[[entity]]
+name = "Documentação no Obsidian"
+group = "sistema"
+summary = "Este mapa: exportador no nomad-enhancement, timer a cada 10 min, cofre sincronizado com o atheron."
+keywords = ["Obsidian", "exportador", "cofre"]
+files = ["nomad-enhancement:obsidian/", "nomad-enhancement:scripts/obsidian-install.sh"]
+
+# ---------------------------------------------------------------- serviços sem arquivo de unit no repo
+# (as units achadas como arquivo no repo entram sozinhas)
+
+[[service]]
+name = "nomad-dns-failover.timer"
+repo = "nomad-enhancement"
+file = "scripts/dns-failover-install.sh"
+scope = "sistema"
+description = "A cada 30 s testa o Pi-hole; após 2 falhas desliga o DNS da Tailscale e religa quando ele volta."
+check = "systemctl status nomad-dns-failover.timer"
+
+# ---------------------------------------------------------------- notas manuais → nós (fixa a ligação)
+
+[note_links]
+"Contas do Claude por área" = ["Claude Code e Orca"]
+"Wine no nomad" = ["Wine e programas do Windows"]
+
+# ---------------------------------------------------------------- atalhos e links
+
+[[quick]]
+what = "Versão do sistema e deployments"
+cmd = "rpm-ostree status"
+
+[[quick]]
+what = "Serviços com falha"
+cmd = "systemctl --failed; systemctl --user --failed"
+
+[[quick]]
+what = "Timers do usuário"
+cmd = "systemctl --user list-timers"
+
+[[quick]]
+what = "Tailnet: aparelhos"
+cmd = "tailscale status"
+
+[[quick]]
+what = "DNS failover do nomad"
+cmd = "journalctl -u nomad-dns-failover -n 20"
+
+[[quick]]
+what = "Apps Flatpak"
+cmd = "flatpak list --app"
+
+[[quick]]
+what = "Containers de desenvolvimento"
+cmd = "distrobox list"
+
+[[quick]]
+what = "Log desta documentação"
+cmd = "journalctl --user -u nomad-obsidian -n 50"
+
+[[link]]
+label = "Central do Cerberus (servidor)"
+note = "projects/cerberus/Cerberus"
+
+[[link]]
+label = "Tailscale: painel da tailnet"
+url = "https://login.tailscale.com/admin/machines"
