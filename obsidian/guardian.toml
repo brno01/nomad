@@ -1,0 +1,71 @@
+# Política do vigia do Obsidian (obsidian/guardian.py). Ajuste aqui, não no código.
+
+[guardian]
+vault = "/var/mnt/nas/vault"
+interval = 20          # segundos entre conferências (o cofre é um compartilhamento de rede: sem inotify)
+quiet_polls = 2        # ciclos sem mudança antes de agir (os exportadores escrevem várias notas seguidas)
+full_every = 600       # passada completa mesmo sem mudança (pega o Obsidian reescrevendo o graph.json)
+notes_color = "D1D5DB" # cinza das suas notas (notes/ de cada projeto)
+hub_color = "8B8FA3"   # nó de mapa (tag mapa) sem tipo conhecido
+# vocabulário controlado de tags e status (compartilhado com o segundo cérebro, que grava as conversas)
+taxonomy = "~/development/dotfiles/claude/second-brain/taxonomia.toml"
+# pastas que o vigia ignora por inteiro (além de .obsidian, .stversions, .trash, .lixeira)
+ignore = ["attachments", "templates", "daily", "archive", "drawings", "bases", "inbox"]
+
+# Projetos conhecidos: nó central e cor. Projeto novo aparece sozinho: ganha a próxima cor da paleta.
+[projects.nomad]
+central = "Central do nomad"
+color = "39FF14"   # verde fluorescente
+
+[projects.cerberus]
+central = "Cerberus"
+color = "FFFFFF"
+
+# Cor por tipo de nó (tag map/<tipo>): a mesma nos dois projetos.
+[tags]
+ia = "A87FF5"
+componentes = "F97316"
+containers = "14B8A6"
+servicos = "38BDF8"
+docs = "9CA3AF"
+atalhos = "EAB308"
+projetos = "F472B6"
+sistema = "8E6CEF"
+repos = "E0A030"
+
+# Cores para projetos novos (fluorescentes, distintas das de tipo), na ordem de uso.
+[palette]
+colors = ["00F0FF", "FF2BD6", "FFF200", "FF6A00", "B6FF00", "00FF9C", "FF3B3B", "7A5CFF"]
+
+# Cor das folhas por tag de tipo (tons mais apagados que os hubs: o esqueleto se destaca).
+[leaf_tags]
+guia = "6B7A90"
+pesquisa = "C9A66B"
+decisao = "9FB8E8"
+conversa = "7FD1B9"
+plano = "D4A5C7"
+historia = "A6A6A6"
+config = "8FA67A"
+servico = "6FA8C9"
+blueprint = "B79F85"
+arquitetura = "9A8FC9"
+indice = "B0B0B0"
+atalhos = "C9B458"
+
+# O que não é hub nem folha de tipo conhecido (entra antes da cor de pasta de cada projeto).
+[extra_groups]
+'path:"Home.md"' = "F5F5F5"
+'path:"daily"' = "8E8E8E"
+'path:"areas/trabalho"' = "4FB3BF"
+
+# Aparência do grafo, pensada para árvore. Aplicada uma vez e de novo só quando esta seção mudar.
+[graph_defaults]
+showTags = false
+showOrphans = true
+hideUnresolved = true
+showArrow = true
+textFadeMultiplier = -1
+nodeSizeMultiplier = 1.3
+linkDistance = 90
+repelStrength = 14
+centerStrength = 0.3
