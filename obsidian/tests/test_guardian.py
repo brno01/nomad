@@ -60,7 +60,8 @@ def test_graph_colors_projects_types_and_keeps_user_groups(vault):
     assert groups['path:"projects/cerberus/Cerberus.md"'] == 0xFFFFFF
     assert groups["tag:#mapa tag:#map/servicos"] == 0x38BDF8  # hub por tipo
     assert "tag:#map/servicos" not in groups  # forma antiga (pintava folhas também) some
-    assert groups['path:"projects/novo"'] == 0x00F0FF  # primeira cor da paleta
+    novo = groups['path:"projects/novo"']
+    assert all(g.color_de(novo, c) >= g.MIN_DE for q, c in groups.items() if q != 'path:"projects/novo"')  # distinta de todas as outras
     assert groups["tag:#meu"] == 123  # grupo do usuário preservado
     assert graph(vault)["showTags"] is False
 
@@ -78,14 +79,17 @@ def test_graph_is_idempotent_and_repairs_when_obsidian_drops_groups(vault):
     assert changed and graph(vault)["colorGroups"]
 
 
-def test_new_project_color_is_stable_across_runs(vault):
+def test_new_project_color_is_stable_across_runs_and_distinct(vault):
     put(vault, "projects/novo/notes/a.md", "# a\n")
     assigned: dict[str, int] = {}
     g.run_pass(policy(vault), False, assigned)
+    first = dict(assigned)
     put(vault, "projects/outro/notes/b.md", "# b\n")
     g.run_pass(policy(vault), False, assigned)
     groups = {x["query"]: x["color"]["rgb"] for x in graph(vault)["colorGroups"]}
-    assert groups['path:"projects/novo"'] == 0x00F0FF and groups['path:"projects/outro"'] == 0xFF2BD6
+    assert assigned["projects/novo"] == first["projects/novo"]  # a cor do primeiro não muda quando entra outro
+    assert groups['path:"projects/outro"'] != groups['path:"projects/novo"']
+    assert g.color_de(groups['path:"projects/outro"'], groups['path:"projects/novo"']) >= g.MIN_DE
 
 
 def test_completes_pai_and_tags_without_touching_what_exists(vault):
@@ -318,3 +322,44 @@ def test_graph_repairs_are_rate_limited_when_something_keeps_rewriting_it(vault,
     (vault / ".obsidian/graph.json").write_text(json.dumps({"colorGroups": []}))
     _, changed = run(vault)
     assert not changed and graph(vault)["colorGroups"] == []  # pausado: não repara de novo
+
+
+def test_shipped_policy_has_no_equal_or_similar_group_colors(vault):
+    put(vault, "projects/cerberus/Cerberus.md", f"{GEN}\n# Cerberus\n")
+    put(vault, "areas/trabalho/projects/loja/notes/x.md", "# x\n")
+    run(vault)
+    assert g.lint_colors(graph(vault)["colorGroups"]) == []  # cada grupo, uma cor só sua
+
+
+def test_every_project_gets_its_own_rest_color(vault):
+    put(vault, "projects/cerberus/Cerberus.md", f"{GEN}\n# Cerberus\n")
+    run(vault)
+    groups = {x["query"]: x["color"]["rgb"] for x in graph(vault)["colorGroups"]}
+    assert groups['path:"projects/nomad"'] != groups['path:"projects/cerberus"']
+
+
+def test_old_assigned_color_that_became_similar_is_replaced(vault):
+    put(vault, "projects/novo/notes/a.md", "# a\n")
+    pol = policy(vault)
+    clash = next(iter(pol.tag_colors.values()))  # igual a um grupo de tipo
+    assigned = {"projects/novo": clash}
+    g.run_pass(pol, False, assigned)
+    assert g.color_de(assigned["projects/novo"], clash) >= g.MIN_DE
+
+
+def test_legend_note_is_generated_from_the_same_groups_and_left_alone_when_yours(vault):
+    _hub_and_leaf(vault)
+    put(vault, "Home.md", "---\ntags: [inicio]\n---\n# Início\n")
+    run(vault)
+    leg = (vault / "Legenda do grafo.md").read_text()
+    assert "gerado pelo vigia do cofre" in leg and "Pai: [[Home]]" in leg
+    assert "Hub: Serviços" in leg and "Guias" in leg and "Projeto nomad" in leg
+    groups = graph(vault)["colorGroups"]
+    for gr in groups:  # toda cor de grupo aparece na legenda
+        assert f"#{gr['color']['rgb']:06X}" in leg
+    before = leg
+    f, _ = run(vault)
+    assert (vault / "Legenda do grafo.md").read_text() == before and not any("legenda" in a for a in f.actions)
+    (vault / "Legenda do grafo.md").write_text("# minha legenda\n")  # uma nota sua com o mesmo nome
+    run(vault)
+    assert (vault / "Legenda do grafo.md").read_text() == "# minha legenda\n"

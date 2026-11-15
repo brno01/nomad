@@ -22,6 +22,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -256,6 +257,70 @@ def edit_note(vault: Path, rel: str, new: str, mtime_ns: int, dry: bool) -> bool
 # ----------------------------------------------------------------------------- graph.json
 
 
+# ----------------------------------------------------------------------------- cores distintas
+
+MIN_DE = 20.0  # distância CIE Lab mínima entre dois grupos de cor; abaixo disso as cores "parecem iguais" no grafo
+
+
+def _lab(rgb: int) -> tuple[float, float, float]:
+    r, g, b = ((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255)
+    lin = lambda c: (c / 255 / 12.92) if c / 255 <= 0.04045 else (((c / 255) + 0.055) / 1.055) ** 2.4  # noqa: E731
+    r, g, b = lin(r), lin(g), lin(b)
+    x, y, z = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047, 0.2126 * r + 0.7152 * g + 0.0722 * b, (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
+    t = lambda v: v ** (1 / 3) if v > 0.008856 else 7.787 * v + 16 / 116  # noqa: E731
+    fx, fy, fz = t(x), t(y), t(z)
+    return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
+
+
+def color_de(a: int, b: int) -> float:
+    return math.dist(_lab(a), _lab(b))
+
+
+def _lch_to_rgb(L: float, C: float, h: float) -> int | None:
+    a, b = C * math.cos(math.radians(h)), C * math.sin(math.radians(h))
+    fy = (L + 16) / 116
+    fx, fz = fy + a / 500, fy - b / 200
+    inv = lambda t: t ** 3 if t ** 3 > 0.008856 else (t - 16 / 116) / 7.787  # noqa: E731
+    x, y, z = inv(fx) * 0.95047, inv(fy), inv(fz) * 1.08883
+    lin = (3.2406 * x - 1.5372 * y - 0.4986 * z, -0.9689 * x + 1.8758 * y + 0.0415 * z, 0.0557 * x - 0.2040 * y + 1.0570 * z)
+    out = 0
+    for c in lin:
+        if c < -1e-4 or c > 1 + 1e-4:
+            return None
+        c = min(max(c, 0.0), 1.0)
+        v = 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+        out = (out << 8) | round(v * 255)
+    return out
+
+
+_POOLS: dict[str, list[int]] = {}
+
+
+def distinct_color(used: set[int], kind: str = "vivid") -> int:
+    """A cor (vívida para nó de projeto, apagada para o 'resto do projeto') mais distante das já usadas. Determinística."""
+    if kind not in _POOLS:
+        spec = ((70, 80, 88), (60, 80, 100)) if kind == "vivid" else ((42, 52, 62), (10, 18, 26))
+        pool = [c for L in spec[0] for C in spec[1] for h in range(0, 360, 10) if (c := _lch_to_rgb(L, C, h)) is not None]
+        _POOLS[kind] = sorted(set(pool))
+    return max(_POOLS[kind], key=lambda c: (min((color_de(c, u) for u in used), default=99.0), -c))
+
+
+def static_colors(policy: "Policy") -> set[int]:
+    return ({*policy.tag_colors.values(), *policy.leaf_colors.values(), *policy.project_colors.values(), policy.hub_color}
+            | {c for _, c in policy.extra_groups})
+
+
+def lint_colors(groups: list[dict], min_de: float = MIN_DE) -> list[tuple[str, str, float]]:
+    """Pares de grupos cujas cores são iguais ou parecidas demais (a regra do cofre: cada grupo, uma cor só sua)."""
+    out = []
+    for i, a in enumerate(groups):
+        for b in groups[i + 1:]:
+            d = color_de(a["color"]["rgb"], b["color"]["rgb"])
+            if d < min_de:
+                out.append((a["query"], b["query"], round(d, 1)))
+    return out
+
+
 def desired_groups(policy: Policy, projects: list[Project], centrals: dict[str, str | None], assigned: dict[str, int]) -> list[dict]:
     """Grupos de cor que o vigia mantém, em ordem de prioridade (o primeiro que casa vale):
     central de cada projeto > hubs por tipo (tag mapa + map/<tipo>) > hub genérico > folhas por tipo > extras > pasta do projeto."""
@@ -277,18 +342,25 @@ def desired_groups(policy: Policy, projects: list[Project], centrals: dict[str, 
         add(q, rgb)
     for p in projects:
         # sem nó central a pasta inteira ganha a cor do projeto; com ele, o que sobrou (notas suas, planos, atalhos) fica neutro
-        add(f'path:"{p.root}"', policy.notes_color if centrals.get(p.key) else project_color(policy, p, assigned))
+        add(f'path:"{p.root}"', rest_color(policy, p, assigned) if centrals.get(p.key) else project_color(policy, p, assigned))
     return groups
 
 
-def project_color(policy: Policy, p: Project, assigned: dict[str, int]) -> int:
-    if p.slug in policy.project_colors:
+def project_color(policy: Policy, p: Project, assigned: dict[str, int], key: str = "", kind: str = "vivid") -> int:
+    """Cor do projeto: a da política ou, projeto novo, a mais distinta de todas as já usadas (guardada para ficar estável)."""
+    if not key and p.slug in policy.project_colors:
         return policy.project_colors[p.slug]
-    if p.root not in assigned:
-        used = set(policy.project_colors.values()) | set(assigned.values())
-        free = [c for c in policy.palette if c not in used]
-        assigned[p.root] = free[0] if free else policy.palette[len(assigned) % len(policy.palette)]
-    return assigned[p.root]
+    key = key or p.root
+    used = static_colors(policy) | {c for r, c in assigned.items() if r != key}
+    cur = assigned.get(key)
+    if cur is None or min(color_de(cur, u) for u in used) < MIN_DE:  # nova, ou ficou parecida com outra (a paleta mudou)
+        assigned[key] = distinct_color(used, kind)
+    return assigned[key]
+
+
+def rest_color(policy: Policy, p: Project, assigned: dict[str, int]) -> int:
+    """Cor do 'resto do projeto' (notas suas, planos, atalhos): apagada e própria de cada projeto, para nenhum grupo repetir cor."""
+    return project_color(policy, p, assigned, key=f"{p.root}#resto", kind="muted")
 
 
 def owned(query: str, projects: list[Project], policy: Policy, want: set[str]) -> bool:
@@ -433,6 +505,68 @@ def fix_bookmarks(vault: Path, files: dict[str, tuple[int, int]], centrals: list
     if done and not dry:
         atomic_write(path, json.dumps(data, indent=2, ensure_ascii=False))
     return done
+
+
+# ----------------------------------------------------------------------------- legenda do grafo
+
+LEGEND_REL = "Legenda do grafo.md"
+LEGEND_MARK = "gerado pelo vigia do cofre"
+HUB_TEXT = {"ia": "IA: modelos e agentes", "componentes": "Componentes", "containers": "Containers", "servicos": "Serviços", "docs": "Documentação",
+            "atalhos": "Atalhos", "projetos": "Projetos ligados", "sistema": "Sistema", "repos": "Repositórios"}
+LEAF_TEXT = {"guia": "Guias", "pesquisa": "Pesquisas", "decisao": "Decisões", "conversa": "Conversas com o Claude", "plano": "Planos",
+             "historia": "Histórico", "config": "Configurações", "blueprint": "Blueprint e regras"}
+EXTRA_TEXT = {'path:"Home.md"': ("Início", "a nota Home"), 'path:"Legenda do grafo.md"': ("Legenda", "esta nota"),
+              'path:"daily"': ("Diário", "notas diárias"), 'path:"areas/trabalho"': ("Trabalho", "o que está em areas/trabalho (isolado do pessoal)")}
+
+
+def legend_rows(policy: Policy, projects: list[Project], centrals: dict[str, str | None], groups: list[dict]) -> list[tuple[int, str, str]]:
+    """(cor, grupo, o que contém) na ordem de prioridade do grafo; a fonte é a mesma lista de grupos do graph.json."""
+    rows: list[tuple[int, str, str]] = []
+    by_q = {g["query"]: g["color"]["rgb"] for g in groups}
+    for p in projects:
+        c = centrals.get(p.key)
+        if c and f'path:"{c}"' in by_q:
+            rows.append((by_q[f'path:"{c}"'], f"Projeto {p.slug}" + (" (trabalho)" if p.area != "pessoal" else ""), "o nó central do projeto"))
+    for tag in policy.tag_colors:
+        rows.append((by_q[f"tag:#mapa tag:#map/{tag}"], f"Hub: {HUB_TEXT.get(tag, tag)}", f"nós de mapa com a tag `map/{tag}`"))
+    rows.append((policy.hub_color, "Hub sem tipo", "nós de mapa (tag `mapa`) sem tipo conhecido"))
+    for tag, rgb in policy.leaf_colors.items():
+        rows.append((rgb, LEAF_TEXT.get(tag, tag), f"notas com a tag `{tag}`"))
+    for q, rgb in policy.extra_groups:
+        name, what = EXTRA_TEXT.get(q, (q, q))
+        rows.append((rgb, name, what))
+    for p in projects:
+        if not centrals.get(p.key):
+            rows.append((by_q[f'path:"{p.root}"'], f"Projeto {p.slug}" + (" (trabalho)" if p.area != "pessoal" else ""), "a pasta inteira (o projeto ainda não tem nota central)"))
+    for p in projects:
+        if centrals.get(p.key):
+            rows.append((by_q[f'path:"{p.root}"'], f"Resto do projeto {p.slug}" + (" (trabalho)" if p.area != "pessoal" else ""), "suas notas, planos e atalhos que não têm tipo próprio"))
+    return rows
+
+
+def render_legend(rows: list[tuple[int, str, str]]) -> str:
+    out = ["---", 'title: "Legenda do grafo"', "type: legend", "tags: [legenda]", "---",
+           f"<!-- {LEGEND_MARK} (nomad-enhancement/obsidian/guardian.py): é reescrito sozinho; não edite aqui -->",
+           "Pai: [[Home]]", "", "# Legenda do grafo", "",
+           "Cada grupo do grafo tem uma cor só sua: nenhuma se repete nem se parece com outra. A lista é gerada da mesma configuração que pinta o grafo, "
+           "na ordem em que o Obsidian a aplica (a primeira que casa vale).", "",
+           "| Cor | Grupo | O que contém |", "|---|---|---|"]
+    for rgb, name, what in rows:
+        out.append(f'| <span style="display:inline-block;width:1.1em;height:1.1em;border-radius:2px;background:#{rgb:06X}"></span> `#{rgb:06X}` | {name} | {what} |')
+    return "\n".join(out) + "\n"
+
+
+def fix_legend(vault: Path, policy: Policy, projects: list[Project], centrals: dict[str, str | None], groups: list[dict], dry: bool) -> bool:
+    path = vault / LEGEND_REL
+    text = render_legend(legend_rows(policy, projects, centrals, groups))
+    cur = read(vault, LEGEND_REL)
+    if cur is not None and LEGEND_MARK not in cur:
+        return False  # uma nota sua com esse nome: não mexo
+    if cur == text:
+        return False
+    if not dry:
+        atomic_write(path, text)
+    return True
 
 
 # ----------------------------------------------------------------------------- cobertura (quais nós ficam sem cor)
@@ -795,6 +929,11 @@ def run_pass(policy: Policy, dry: bool, assigned: dict[str, int]) -> tuple[Findi
         g = fix_graph(vault, policy, projects, centrals, assigned, dry)
         if g and not dry:
             GRAPH_REPAIRS.append(now)
+    groups = desired_groups(policy, projects, centrals, assigned)
+    if fix_legend(vault, policy, projects, centrals, groups, dry):
+        f.actions.append("legenda do grafo atualizada")
+    for qa, qb, d in lint_colors(groups):
+        f.report.append(f"- cores parecidas (distância {d}, mínimo {MIN_DE:g}): `{qa}` e `{qb}`")
     f.actions += fix_bookmarks(vault, files, [c for c in centrals.values() if c], dry)
     f.actions += fix_views(vault, policy, projects, centrals, dry)
     for a in f.actions:
@@ -835,6 +974,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--once", action="store_true", help="um ciclo e sai")
     ap.add_argument("--dry-run", action="store_true", help="mostra o que faria, sem escrever (implica --once)")
     ap.add_argument("--report", action="store_true", help="imprime o relatório do último ciclo e sai")
+    ap.add_argument("--lint-colors", action="store_true", help="falha se dois grupos de cor forem iguais ou parecidos (distância CIE Lab < 20)")
     ap.add_argument("--coverage", action="store_true", help="mostra quantas notas cada grupo de cor pinta e quais ficam sem cor")
     ap.add_argument("--interval", type=int)
     a = ap.parse_args(argv)
@@ -844,6 +984,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     policy = load_policy(Path(a.policy), a.vault, a.interval)
     assigned = load_assigned()
+    if a.lint_colors:
+        projects = find_projects(policy.vault)
+        files = scan(policy.vault, policy.ignore)
+        centrals = {p.key: find_central(policy.vault, p, files, policy) for p in projects}
+        bad = lint_colors(desired_groups(policy, projects, centrals, assigned))
+        for qa, qb, d in bad:
+            print(f"parecidas ({d}): {qa}  <->  {qb}")
+        print("cores distintas" if not bad else f"{len(bad)} par(es) de cores parecidas")
+        return 1 if bad else 0
     if a.coverage:
         projects = find_projects(policy.vault)
         files = scan(policy.vault, policy.ignore)
