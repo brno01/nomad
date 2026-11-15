@@ -33,6 +33,12 @@ name = "tailnet-dns-failover"
 path = "~/development/personal/tailnet-dns-failover"
 keywords = ["tailnet-dns-failover", "GitHub Actions", "tag:dns-failover"]
 
+[[source]]
+name = "kindle-monitor"
+path = "~/development/personal/kindle-monitor"
+description = "Kindle Paperwhite 5 com jailbreak como monitor de recursos em e-ink do atheron: servidor Python que gera um PNG, Tailscale em modo userspace e um laço com FBInk. Notas de operação e decisões em notes/."
+keywords = ["kindle-monitor", "Kindle", "Paperwhite", "Jobman", "FBInk", "e-ink"]
+
 # ---------------------------------------------------------------- descrições fixas
 # Têm prioridade sobre o que o exportador acha no CLAUDE.md, no README ou no cabeçalho do script.
 
