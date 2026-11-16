@@ -31,6 +31,8 @@ atalhos = "EAB308"
 projetos = "F472B6"
 sistema = "56A325"
 repos = "E66A63"
+# quadro da trilha (T-0002): cor escolhida pelo snippet de distância CIE Lab, distante das demais
+tarefas = "3FFB8D"
 
 # Cor das folhas por tag de tipo. REGRA: nenhuma cor se repete nem se parece com outra (distância CIE Lab >= 20),
 # conferido por `guardian.py --lint-colors` e por teste; a legenda do cofre ("Legenda do grafo") sai desta mesma lista.
@@ -43,6 +45,8 @@ plano = "6690DF"
 historia = "BC7DA4"
 config = "C47F6E"
 blueprint = "239EB4"
+# cartões da trilha (T-0002): cor escolhida pelo snippet de distância CIE Lab, distante das demais
+tarefa = "85E6A1"
 
 # O que não é hub nem folha de tipo conhecido (entra antes da cor de pasta de cada projeto).
 [extra_groups]

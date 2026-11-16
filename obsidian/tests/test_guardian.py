@@ -363,3 +363,34 @@ def test_legend_note_is_generated_from_the_same_groups_and_left_alone_when_yours
     (vault / "Legenda do grafo.md").write_text("# minha legenda\n")  # uma nota sua com o mesmo nome
     run(vault)
     assert (vault / "Legenda do grafo.md").read_text() == "# minha legenda\n"
+
+
+TRILHA = "<!-- gerado pela trilha -->"
+
+def test_trilha_marker_counts_as_generated():
+    assert g.is_generated(f"---\ntype: tarefa\n---\n{TRILHA}\n")
+    assert not g.is_generated("---\ntype: tarefa\n---\nescrito à mão\n")
+
+def test_trilha_cards_and_board_are_never_edited(vault):
+    card = put(vault, "projects/nomad/tarefas/T-0001 construir a trilha.md",
+               f'---\ntitle: "T-0001 construir a trilha"\ntype: tarefa\ntags: [nomad, tarefa]\n---\n{TRILHA}\n# sem pai\n')
+    board = put(vault, "projects/nomad/tarefas/Tarefas - nomad.md",
+                f"---\nkanban-plugin: board\ntags: [nomad, mapa, map/tarefas]\n---\n{TRILHA}\n## Backlog\n")
+    before = (card.read_text(), board.read_text())
+    run(vault); run(vault)
+    assert (card.read_text(), board.read_text()) == before
+
+def test_tarefa_hub_and_leaf_have_own_distinct_colors(vault):
+    pol = policy(vault)
+    assert "tarefas" in pol.tag_colors and "tarefa" in pol.leaf_colors
+    run(vault)
+    groups = graph(vault)["colorGroups"]
+    assert {"tag:#mapa tag:#map/tarefas", "tag:#tarefa"} <= {x["query"] for x in groups}
+    assert g.lint_colors(groups) == []
+
+def test_legend_names_the_tarefa_groups(vault):
+    _hub_and_leaf(vault)
+    put(vault, "Home.md", "---\ntags: [inicio]\n---\n# Início\n")
+    run(vault)
+    leg = (vault / "Legenda do grafo.md").read_text()
+    assert "Hub: Tarefas (quadro kanban)" in leg and "Tarefas (cartões da trilha)" in leg
