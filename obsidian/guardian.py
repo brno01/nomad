@@ -11,7 +11,7 @@ A cada ciclo (padrão 20 s) confere se algo mudou no cofre e, quando mudou e o c
      archive/guardiao/<data>/ (nunca é apagada) e os links para ela passam para a que ficou.
   4. Links quebrados nessas notas: reescritos quando só existe um alvo possível no projeto.
 
-Notas geradas (marcador "gerado por"/"gerado pelo") nunca são editadas: quem as gera as corrige.
+Notas geradas (marcador "gerado por"/"gerado pelo"/"gerado pela") nunca são editadas: quem as gera as corrige.
 O que não dá para corrigir sozinho vai para o relatório (~/.local/state/obsidian-guardian/report.md).
 
 Uso: python3 -I obsidian/guardian.py [--vault CAMINHO] [--once] [--dry-run] [--report] [--interval S]
@@ -38,7 +38,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 DEFAULT_POLICY = HERE / "guardian.toml"
 STATE_DIR = Path(os.environ.get("OBSIDIAN_GUARDIAN_STATE", Path.home() / ".local/state/obsidian-guardian"))
-GENERATED_RE = re.compile(r"gerado (?:por|pelo)")
+GENERATED_RE = re.compile(r"gerado (?:por|pel[oa])")
 PAI_RE = re.compile(r"^Pai:\s*\[\[", re.M)
 # [[alvo]], [[alvo|apelido]], [[alvo#seção]] e a forma escapada de tabelas [[alvo\|apelido]]
 LINK_RE = re.compile(r"\[\[([^\]|#\\]+?)(#[^\]|\\]*)?(\\?\|[^\]]*)?\]\]")
@@ -512,9 +512,9 @@ def fix_bookmarks(vault: Path, files: dict[str, tuple[int, int]], centrals: list
 LEGEND_REL = "Legenda do grafo.md"
 LEGEND_MARK = "gerado pelo vigia do cofre"
 HUB_TEXT = {"ia": "IA: modelos e agentes", "componentes": "Componentes", "containers": "Containers", "servicos": "Serviços", "docs": "Documentação",
-            "atalhos": "Atalhos", "projetos": "Projetos ligados", "sistema": "Sistema", "repos": "Repositórios"}
+            "atalhos": "Atalhos", "projetos": "Projetos ligados", "sistema": "Sistema", "repos": "Repositórios", "tarefas": "Tarefas (quadro kanban)"}
 LEAF_TEXT = {"guia": "Guias", "pesquisa": "Pesquisas", "decisao": "Decisões", "conversa": "Conversas com o Claude", "plano": "Planos",
-             "historia": "Histórico", "config": "Configurações", "blueprint": "Blueprint e regras"}
+             "historia": "Histórico", "config": "Configurações", "blueprint": "Blueprint e regras", "tarefa": "Tarefas (cartões da trilha)"}
 EXTRA_TEXT = {'path:"Home.md"': ("Início", "a nota Home"), 'path:"Legenda do grafo.md"': ("Legenda", "esta nota"),
               'path:"daily"': ("Diário", "notas diárias"), 'path:"areas/trabalho"': ("Trabalho", "o que está em areas/trabalho (isolado do pessoal)")}
 
