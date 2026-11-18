@@ -196,6 +196,51 @@ def test_unreachable_remote_is_reported_not_fatal(env):
     assert "indisponível" in (env["root"] / "Central do nomad.md").read_text()
 
 
+def test_mirror_follows_url_change_in_sources(env):
+    """O cache é clonado uma vez; se a url do sources.toml muda, o remote gravado tem de mudar junto."""
+    tmp = env["tmp"]
+    run(env)
+    cache = tmp / "cache/pendrive.git"
+    old = ex.git(cache, "config", "--get", "remote.origin.url").strip()
+    assert old.endswith("remote.git")
+    # novo remoto com um commit a mais; o fetch tem de vir dele, não do antigo
+    new_bare = tmp / "remote2.git"
+    sh(tmp, "git", "clone", "-q", "--bare", str(tmp / "remote.git"), str(new_bare))
+    work = init(tmp / "seed2")
+    sh(work, "git", "remote", "add", "origin", str(new_bare))
+    sh(work, "git", "pull", "-q", "origin", "master")
+    commit(work, {"NOVO.md": "# novo\n"}, "Segundo remoto")
+    sh(work, "git", "push", "-q", "origin", "master")
+    cfg = env["cfg"]
+    cfg.write_text(cfg.read_text().replace(f"file://{tmp / 'remote.git'}", f"file://{new_bare}"))
+    run(env)
+    assert ex.git(cache, "config", "--get", "remote.origin.url").strip() == f"file://{new_bare}"
+    assert "Segundo remoto" in ex.git(cache, "log", "--format=%s", "master")
+
+
+def test_mirror_rejects_url_starting_with_dash(env):
+    """Uma url que começa com '-' viraria opção do git: recusa antes do clone e do set-url."""
+    tmp = env["tmp"]
+    cache = tmp / "cache/evil.git"
+    _, status = ex.mirror("-oProxyCommand=touch " + str(tmp / "pwned"), cache)
+    assert status.startswith("indisponível") and not cache.exists() and not (tmp / "pwned").exists()
+    # com o espelho já clonado, o remote gravado não pode ser trocado por ela
+    run(env)
+    good = tmp / "cache/pendrive.git"
+    before = ex.git(good, "config", "--get", "remote.origin.url").strip()
+    _, status = ex.mirror("--upload-pack=touch " + str(tmp / "pwned"), good)
+    assert status.startswith("indisponível")
+    assert ex.git(good, "config", "--get", "remote.origin.url").strip() == before and not (tmp / "pwned").exists()
+
+
+def test_mirror_keeps_url_when_unchanged(env):
+    run(env)
+    cache = env["tmp"] / "cache/pendrive.git"
+    before = ex.git(cache, "config", "--get", "remote.origin.url").strip()
+    run(env)
+    assert ex.git(cache, "config", "--get", "remote.origin.url").strip() == before
+
+
 def test_home_block_inserted_once_after_cerberus(env):
     run(env)
     run(env, "--force")
