@@ -14,7 +14,7 @@ ignore = []
 
 [[source]]
 name = "nomad"
-url = "ssh://root@atheron/root/nomad"
+url = "ssh://atheron-nomad-git/root/nomad"
 description = "O sistema do pendrive: imagem Bazzite (bootc), tudo que vai para o /etc, build do disco e gravador pelo Windows."
 keywords = ["pendrive", "DataTraveler", "write-nomad", "install-to-disk", "overlay/etc"]
 

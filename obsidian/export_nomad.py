@@ -107,13 +107,21 @@ class Repo:
 
 def mirror(url: str, cache: Path) -> tuple[Path, str]:
     """Clona/atualiza um espelho local de um repo remoto. Devolve (git dir, status)."""
+    if url.startswith("-"):  # o git leria como opção (ex.: -oProxyCommand=...)
+        return cache, "indisponível: url inválida (começa com '-')"
     if not (cache / "HEAD").exists():
         cache.parent.mkdir(parents=True, exist_ok=True)
-        r = subprocess.run(["git", "clone", "--mirror", "-q", url, str(cache)],
+        r = subprocess.run(["git", "clone", "--mirror", "-q", "--", url, str(cache)],
                            capture_output=True, env=_env(), timeout=600, check=False)
         if r.returncode != 0:
             return cache, "indisponível: " + _first_line(r.stderr)
         return cache, "ok"
+    # o espelho é clonado uma vez; se a url do sources.toml mudou, o remote gravado tem de acompanhar
+    # (senão o fetch continua indo para o endereço antigo)
+    current = git(cache, "config", "--get", "remote.origin.url", check=False).strip()
+    if current != url:
+        subprocess.run(["git", "-C", str(cache), "remote", "set-url", "origin", "--", url],
+                       capture_output=True, env=_env(), check=False)
     r = subprocess.run(["git", "-C", str(cache), "fetch", "--prune", "-q"],
                        capture_output=True, env=_env(), timeout=600, check=False)
     if r.returncode != 0:
