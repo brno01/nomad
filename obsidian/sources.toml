@@ -8,7 +8,8 @@
 vault = "/var/mnt/nas/vault"
 # Repos git novos nestas pastas entram sozinhos no nó "Novos (classificar)".
 discover = ["~/development/personal"]
-ignore = []
+# Repositórios com projeto próprio no cofre não entram no nomad (projetos apartados).
+ignore = ["cerberus", "sinapses"]
 
 # ---------------------------------------------------------------- repositórios
 
