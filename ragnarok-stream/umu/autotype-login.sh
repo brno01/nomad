@@ -56,9 +56,9 @@ main() {
     fi
 
     # EPOCHREALTIME (not SECONDS: that one counts wall-clock second boundaries, so a 1 s timeout can fire early)
-    local deadline=$(( ${EPOCHREALTIME/./} + RO_TYPE_TIMEOUT * 1000000 ))
+    local deadline=$(( ${EPOCHREALTIME/[.,]/} + RO_TYPE_TIMEOUT * 1000000 ))
     until active_is_ragnarok && game_running; do
-        if [ "${EPOCHREALTIME/./}" -ge "$deadline" ]; then
+        if [ "${EPOCHREALTIME/[.,]/}" -ge "$deadline" ]; then
             skip "timeout after ${RO_TYPE_TIMEOUT}s"
             return 0
         fi
