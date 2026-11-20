@@ -319,3 +319,25 @@ def test_conversations_hang_under_their_index_only(env):
     assert "notes/conversas/Conversas|Conversas" in cat and "2026-11-11 Rede" not in cat
     assert "2026-11-11 Rede" not in (env["root"] / "map/Rede.md").read_text()  # não vai para o nó
     assert "testar de novo amanhã" in (env["root"] / "Central do nomad.md").read_text()  # pendência aparece
+
+
+def test_fontes_sem_projetos_alheios(tmp_path: Path):
+    """cerberus e sinapses têm projeto próprio no cofre: o sources.toml real os ignora na descoberta."""
+    import tomllib
+    cfg = tomllib.loads((Path(ex.__file__).with_name("sources.toml")).read_text(encoding="utf-8"))
+    assert {"cerberus", "sinapses"} <= set(cfg["ignore"])
+    assert not {"cerberus", "sinapses"} & {s["name"] for s in cfg["source"]}
+    for name in ("cerberus", "sinapses", "outro"):
+        init(tmp_path / name)
+    assert [s["name"] for s in ex.discover(cfg | {"discover": [str(tmp_path)]}, set())] == ["outro"]
+
+
+def test_ignored_repos_generate_no_notes_and_others_still_do(env):
+    for name in ("cerberus", "sinapses"):
+        commit(init(env["personal"] / name), {"README.md": f"# {name}\n\nProjeto de outro cofre.\n"}, "Init")
+    cfg = env["cfg"]
+    cfg.write_text(cfg.read_text().replace("discover =", 'ignore = ["cerberus", "sinapses"]\ndiscover =', 1))
+    assert run(env) == 0
+    names = {p.name for p in env["root"].rglob("*.md")}
+    assert not [n for n in names if "cerberus" in n or "sinapses" in n]
+    assert "tools (repo).md" in names and "pendrive (repo).md" in names
