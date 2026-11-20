@@ -3,15 +3,20 @@
 # nomad-dns-failover.{service,timer} (every 30 s). See scripts/dns-failover.sh.
 #
 # Usage: scripts/dns-failover-install.sh [--dry-run | --undo]
-# Env: PIHOLE_IP (default 100.64.0.10, the Pi-hole on atheron)
+# Env: PIHOLE_IP (the Pi-hole address; required to install). When it is not set, the
+#      installer reads it from config.local.env at the repository root (not versioned;
+#      copy config.example.env).
 #      For tests: ETC_DIR, BIN_DIR, SKIP_SYSTEMCTL=1
 set -euo pipefail
 
 ETC_DIR=${ETC_DIR:-/etc/systemd/system}
 BIN_DIR=${BIN_DIR:-/usr/local/bin}
 SKIP_SYSTEMCTL=${SKIP_SYSTEMCTL:-0}
-PIHOLE_IP=${PIHOLE_IP:-100.64.0.10}
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+LOCAL_ENV=${LOCAL_ENV:-$SCRIPT_DIR/../config.local.env}
+if [ -z "${PIHOLE_IP:-}" ] && [ -f "$LOCAL_ENV" ]; then
+    PIHOLE_IP=$(sed -n 's/^PIHOLE_IP=//p' "$LOCAL_ENV" | tail -n 1)
+fi
 MODE=apply
 
 case "${1:-}" in
@@ -41,6 +46,11 @@ if [ "$MODE" = undo ]; then
     sctl daemon-reload
     log "note: if the failover had turned tailscale DNS off, turn it back on with: tailscale set --accept-dns=true"
     exit 0
+fi
+
+if [ -z "${PIHOLE_IP:-}" ]; then
+    printf 'error: set PIHOLE_IP or create %s from config.example.env\n' "$LOCAL_ENV" >&2
+    exit 2
 fi
 
 changed=0

@@ -21,7 +21,7 @@ Os instaladores em `scripts/` aceitam `--dry-run` (mostra o que faria) e `--undo
 | O que | Comando |
 |---|---|
 | Desligar o power save do Wi-Fi | `scripts/wifi-powersave.sh` |
-| Instalar o failover de DNS (binário, service e timer) | `scripts/dns-failover-install.sh` |
+| Instalar o failover de DNS (binário, service e timer) | `scripts/dns-failover-install.sh` (lê `PIHOLE_IP` do ambiente ou do `config.local.env`, copiado de `config.example.env`) |
 | Instalar o exportador do Obsidian (timer a cada 10 min) | `scripts/obsidian-install.sh` |
 | Exportar para o Obsidian à mão | `uv run --no-project python -I obsidian/export_nomad.py` (`--dry-run`, `--force`) |
 | Instalar o vigia do Obsidian | `scripts/guardian-install.sh` |
@@ -60,4 +60,4 @@ Detalhes de arquitetura e cuidados: `CLAUDE.md`.
 - O exportador só escreve em notas com o marcador `gerado por`; ajuste o `sources.toml`, não as notas geradas.
 
 ## Licença
-Repositório privado, todos os direitos reservados. Veja [LICENSE](LICENSE).
+[MIT](LICENSE)
