@@ -21,7 +21,7 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 
 ## Estrutura
 - `scripts/wifi-powersave.sh`: desliga o power save do Wi-Fi de vez (drop-in do NetworkManager em `/etc/NetworkManager/conf.d/`) e na hora (`iw`). Com ele ligado, o tráfego que chega ao nomad (tailnet, DNS do Pi-hole) esperava 30–100 ms. Aceita `--dry-run` e `--undo`.
-- `scripts/dns-failover.sh`: instalado como `/usr/local/bin/nomad-dns-failover`; a cada 30 s testa o Pi-hole (`100.64.0.10`) e, após 2 falhas, roda `tailscale set --accept-dns=false`; religa quando ele volta (só o que ele mesmo desligou).
+- `scripts/dns-failover.sh`: instalado como `/usr/local/bin/nomad-dns-failover`; a cada 30 s testa o Pi-hole (endereço em `PIHOLE_IP`, vindo de `config.local.env`) e, após 2 falhas, roda `tailscale set --accept-dns=false`; religa quando ele volta (só o que ele mesmo desligou).
 - `scripts/dns-failover-install.sh`: instala o binário e `nomad-dns-failover.{service,timer}`. Aceita `--dry-run` e `--undo`.
 - `obsidian/export_nomad.py`: documenta o nomad no cofre do NAS (`/var/mnt/nas/vault/projects/nomad`, o mesmo que o Obsidian abre) no mesmo formato do exportador do Cerberus: `Central do nomad` → `map/` (Componentes, Sistema, Serviços, Repositórios, Documentação, Atalhos) → notas, cada uma com `Pai:`. Lê os repos pelo HEAD (commits, não a árvore de trabalho), só escreve se algo mudou e nunca toca notas sem o marcador `gerado por`. Repos git novos em `~/development/personal` entram sozinhos em "Novos (classificar)".
 - `obsidian/sources.toml`: fontes (inclusive `/root/nomad` no atheron por SSH (`ssh://atheron-nomad-git/...`, Host do `~/.ssh/config.d/tailnet.conf` do dotfiles: porta 2222, chave `nomad-export_ed25519`; url que começa com `-` é recusada), espelhado em `~/.cache/nomad-obsidian`; se a url mudar, o exportador atualiza o remote do espelho), nós do mapa, descrições fixas e ligações de notas manuais. Ajuste aqui, não nas notas geradas.
@@ -41,3 +41,6 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 
 ## Cuidados
 - Sistema imutável: mudanças no host podem não persistir ou exigir `rpm-ostree`; prefira Homebrew, distrobox ou configs em `$HOME`.
+
+## Detalhes locais
+Endereços e outros fatos reais desta máquina ficam no `CLAUDE.local.md` (não versionado) e no `config.local.env` (copiado de `config.example.env`). O repositório é público: não versione nenhum dos dois.

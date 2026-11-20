@@ -1,1 +1,6 @@
 __pycache__/
+
+# Local settings (real addresses); see config.example.env
+config.local.env
+# Local facts for Claude sessions (real infrastructure details)
+CLAUDE.local.md

@@ -127,3 +127,21 @@ install_env() {
     [ "$status" -eq 0 ]
     [ -z "$(find "$ETC_DIR" "$BIN_DIR" -type f)" ]
 }
+
+@test "installer without PIHOLE_IP and without config.local.env refuses to install" {
+    install_env
+    unset PIHOLE_IP
+    LOCAL_ENV="$BATS_TEST_TMPDIR/nao-existe.env" run "$REPO/scripts/dns-failover-install.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"set PIHOLE_IP"* ]]
+    [ ! -e "$BIN_DIR/nomad-dns-failover" ]
+}
+
+@test "installer reads PIHOLE_IP from config.local.env" {
+    install_env
+    unset PIHOLE_IP
+    printf 'PIHOLE_IP=192.0.2.53\n' > "$BATS_TEST_TMPDIR/local.env"
+    LOCAL_ENV="$BATS_TEST_TMPDIR/local.env" run "$REPO/scripts/dns-failover-install.sh"
+    [ "$status" -eq 0 ]
+    grep -q "Environment=PIHOLE_IP=192.0.2.53" "$ETC_DIR/nomad-dns-failover.service"
+}

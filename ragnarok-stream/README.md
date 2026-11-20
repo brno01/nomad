@@ -32,7 +32,7 @@ A ordem dos `prep-cmd` no app é: `prep.sh` (escurecer/inibir, ainda com o paine
 4. Rode o bootstrap **uma vez e espere** (baixa GBs): `ragnarok-stream/umu/bootstrap.sh > /tmp/ragnarok-bootstrap.log 2>&1 &`.
 5. Rode o instalador de novo: agora ele configura a fonte no prefixo. `scripts/ragnarok-stream-install.sh --check` confere o estado.
 6. Pareie o Moonlight (PIN na interface web do Sunshine).
-7. Configurações do Moonlight: resolução nativa 2340x1080 (ou 1080p), 60 fps, HEVC, 20 Mbps em casa e 10 Mbps fora. Fora de casa, adicione o host pelo IP do Tailscale `100.64.0.20`.
+7. Configurações do Moonlight: resolução nativa 2340x1080 (ou 1080p), 60 fps, HEVC, 20 Mbps em casa e 10 Mbps fora. Fora de casa, adicione o host pelo IP do nomad no Tailscale (`tailscale ip -4` no nomad).
 8. Para digitar no chat do jogo: um toque com **3 dedos** na tela abre o teclado do Moonlight (o botão X do controle manda Enter e abre o chat; o texto vem do teclado do Moonlight).
 
 ## Como a sessão termina (importante)
