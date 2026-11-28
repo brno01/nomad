@@ -45,3 +45,7 @@ jobs:
 
       - name: ragnarok-stream tests
         run: uv run --no-project --with pytest --with vdf pytest ragnarok-stream/tests -q
+
+      # pwsh is preinstalled on the GitHub Ubuntu runners
+      - name: Windows launcher tests (PowerShell 7)
+        run: pwsh -NoProfile -File windows/tests/test_s22_microscopio.ps1

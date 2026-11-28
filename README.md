@@ -27,6 +27,8 @@ Os instaladores em `scripts/` aceitam `--dry-run` (mostra o que faria) e `--undo
 | Instalar o vigia do Obsidian | `scripts/guardian-install.sh` |
 | Relatório do vigia | `python3 -I obsidian/guardian.py --report` |
 | Instalar o Ragnarok no celular | `scripts/ragnarok-stream-install.sh` (`--check` confere o estado) |
+| Instalar o S22 microscópio (Windows) | `pwsh -File windows/instalar-s22.ps1` (`-Desfazer` remove) |
+| Ver a câmera do S22 ao vivo (Windows) | menu Iniciar > **S22 microscopio** (Ctrl+Alt+M), ou `s22-microscopio.ps1 [-Zoom 2] [-Lanterna] [-Gravar x.mp4] [-SemFio ip:porta] [-Parear ip:porta]` |
 
 ## Testes e CI
 ```bash
@@ -34,11 +36,12 @@ shellcheck scripts/*.sh
 bats tests/
 uv run --no-project --with pytest pytest obsidian/tests
 uv run --no-project --with pytest --with vdf pytest ragnarok-stream/tests -q
+pwsh -NoProfile -File windows/tests/test_s22_microscopio.ps1   # ou, sem pwsh: podman run --rm -v "$PWD:/repo:Z" -w /repo mcr.microsoft.com/powershell:lts-ubuntu-22.04 pwsh -NoProfile -File windows/tests/test_s22_microscopio.ps1
 ```
 Estado conhecido: `obsidian/tests/test_guardian.py` falha ao importar (o `guardian.py` usa `@dataclass` num módulo carregado por `importlib` sem registro em `sys.modules`); por isso o CI roda `obsidian/tests` com `--ignore=obsidian/tests/test_guardian.py`. Os testes de `pre-commit.bats` precisam do `gitleaks` com o subcomando `git` (versão recente) e são pulados no CI.
 
 No GitHub, todo PR e todo push na `master` rodam dois workflows:
-- `ci`: shellcheck, bats e os testes Python do exportador e do `ragnarok-stream`.
+- `ci`: shellcheck, bats, os testes Python do exportador e do `ragnarok-stream` e os testes PowerShell do `windows/`.
 - `security`: segredos, dependências vulneráveis, análise estática, shellcheck e os próprios workflows. Uma falha na `master` abre uma issue `security-scan`.
 
 O `claude` é o revisor sob demanda: comente `@claude` num PR ou numa issue, ou rode o workflow à mão para uma auditoria que abre issues. Só o dono do repositório consegue acioná-lo.
@@ -48,6 +51,7 @@ O `claude` é o revisor sob demanda: comente `@claude` num PR ou numa issue, ou 
 - `obsidian/`: `export_nomad.py` (documenta o nomad no cofre, no formato do exportador do Cerberus), `sources.toml` (fontes e nós do mapa), `guardian.py` + `guardian.toml` (vigia do cofre) e `tests/`.
 - `ragnarok-stream/`: perfis, scripts de Sunshine e umu, AntiMicroX e testes; veja `ragnarok-stream/README.md`.
 - `tests/`: testes `bats` dos scripts.
+- `windows/`: o nomad em Windows 11 (desde 24/11/2026). `s22-microscopio.ps1` mostra a câmera traseira do Galaxy S22 ao vivo pelo scrcpy (cabo USB por padrão, ou depuração sem fio; zoom com Alt+↑/↓ e lanterna com Alt+T na janela) e `instalar-s22.ps1` instala o lançador e o atalho. O S22/S22+ não tem lente macro (foco mínimo de uns 10 cm): para aumento de verdade, use uma lente de clipe. No S22, uma vez: Opções do desenvolvedor > Depuração USB, e aceitar "Permitir depuração USB" ao plugar.
 - `docs/`: páginas de apoio (`aviso-iphone.html`).
 - `.githooks/`: hook `pre-commit` com o gitleaks.
 
