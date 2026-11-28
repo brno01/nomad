@@ -18,6 +18,7 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 | Instalar o vigia do Obsidian (sempre rodando) | `scripts/guardian-install.sh` (`--dry-run`, `--undo`); relatório: `python3 -I obsidian/guardian.py --report` |
 | Testes do exportador | `uv run --no-project --with pytest pytest obsidian/tests` |
 | Exportar para o Obsidian | `uv run --no-project python -I obsidian/export_nomad.py` (`--dry-run`, `--force`) |
+| Testes do `windows/` (PowerShell 7) | `podman run --rm -v "$PWD:/repo:Z" -w /repo mcr.microsoft.com/powershell:lts-ubuntu-22.04 pwsh -NoProfile -File windows/tests/test_s22_microscopio.ps1` |
 
 ## Estrutura
 - `scripts/wifi-powersave.sh`: desliga o power save do Wi-Fi de vez (drop-in do NetworkManager em `/etc/NetworkManager/conf.d/`) e na hora (`iw`). Com ele ligado, o tráfego que chega ao nomad (tailnet, DNS do Pi-hole) esperava 30–100 ms. Aceita `--dry-run` e `--undo`.
@@ -30,6 +31,7 @@ Shell scripts (bash) e arquivos de configuração. Sem gerenciador de pacotes po
 - `scripts/guardian-install.sh`: instala o serviço do vigia. Aceita `--dry-run` e `--undo`.
 - `.githooks/pre-commit`: roda `gitleaks git --staged --redact` e barra o commit com segredo (falha fechado se o gitleaks não existir). Versionado; cada clone liga com `core.hooksPath`.
 - `tests/`: testes `bats` (`bats tests/`); `obsidian/tests/`: pytest do exportador.
+- `windows/`: o nomad agora é Windows 11 (nomad-wtg). `s22-microscopio.ps1` (scrcpy com `--video-source=camera`, adb local; tira `ANDROID_ADB_SERVER_PORT` herdado do lançador do S10) e `instalar-s22.ps1` (atalho Ctrl+Alt+M). Arquivos `.ps1` com BOM (o PowerShell 5.1 lê sem BOM como ANSI). Nos testes, os falsos no Linux são scripts sh: um falso em PowerShell parseia `--tcpip=host:porta` como `-nome:valor`.
 
 ## Contexto da rede
 - O DNS da tailnet é só o Pi-hole (o Tailscale consulta todos os nameservers em paralelo, então resolvers públicos na lista furavam o bloqueio). O failover da tailnet inteira roda no GitHub Actions (repo público `brno01/tailnet-dns-failover`); o `dns-failover` daqui cobre o nomad em ~1 min.
